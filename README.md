@@ -1,8 +1,6 @@
 # Padawan360
 
-## Donations
-
-Instead of offering to buy me a beer at the next convention, please consider making a donation to [Make-a-Wish](https://wish.org/), your local foodbank, or other local charity that helps kids in need. Drop me a note saying you did and I'll be grateful. We spend quite a bit of money on this hobby and even if you plan on doing some charitable events with your droid in the future, please send a few dollars and put it to an immediate good.
+This version of Padawan360 uses less expensive motor controllers for the feet and inexpensive aftermarket wireless xbox controllers. It also uses triggers for Pololu Maestro Minis and a separate arduino lift mechanism by Matt Zwarts.
 
 The R2/Droid Builders have a long history of raising money for groups like [Make-A-Wish](https://wish.org/).
 
@@ -13,8 +11,7 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
 - [Padawan360](#padawan360)
 - [Intro](#intro)
 - [Components](#components)
-  - [Arduino Mega (Option 1 and Recommended!)](#arduino-mega--option-1-and-recommended--)
-  - [Arduino Uno (Option 2)](#arduino-uno--option-2-)
+  - [Arduino Mega](#arduino-mega)
   - [USB Shield](#usb-shield)
   - [Xbox 360 Wireless Controller](#xbox-360-wireless-controller)
   - [MP3 Trigger](#mp3-trigger)
@@ -75,13 +72,9 @@ There are quite a few forks either on GitHub, circulating around via email attac
 
 ## Components
 
-- ### Arduino Mega (Option 1 and Recommended!)
+- ### Arduino Mega
 
 I run a Mega for the body. It uses the hardware serial pins to connect to the motor controllers. Better performance and memory utilization. The Mega has more memory available too so there's more room to expand and do more if you want. With the Mega, I can also support I2C a bit better. I tend to make tweaks to improve readability here more than the Uno as I run a Mega in my droid. It's more performant than the Uno.
-
-- ### Arduino Uno (Option 2)
-
-For the body. Main Arduino that runs everything. Receivers, code, connection to MP3 trigger, etc runs through here. SparkFun, RadioShack, Amazon, you can find these everywhere these days.
 
 - ### USB Shield
 
