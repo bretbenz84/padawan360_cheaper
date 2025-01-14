@@ -102,17 +102,15 @@ Some people have had luck making some adjustments to get some 3rd Party receiver
 
 - ### Xbox 360 Wireless Controller
 
-  [Controller via Amazon](http://www.amazon.com/Xbox-360-Wireless-Controller-Glossy-Black/dp/B003ZSP0WW). I have a nice blue one to match R2 personally ;) Like the USB Receiver, I highly recommend buying a 1st party official Microsoft controller. I know one user bought one cheap on Ebay and it didn't even have a sync button and there was no X on the center Home button. Your mileage may vary with off-brand components here.
-
-  **Note:** I have seen the controller bundled with the USB receiver together. It was in the gaming peripheals department in my local Microcenter. It's marketed for PC gaming. Nice to get it in one package if you can if you don't have an extra 360 controller to spare.
+  Cheap aftermarket wireless controller advertised with a USB dongle operating at 2.4GHz (not real bluetooth) should be used with this script.
 
 - ### MP3 Trigger
 
   [Sourced from SparkFun](https://www.sparkfun.com/products/11029). Be sure to get a microSD card too. Nothing too big, it's just MP3s.
 
-- ### Sabertooth Motor Controller - Feet
+- ### Cytron Motor Controller - Feet
 
-  Depending on your motors you'll want a [Sabertooth 2x32](https://www.dimensionengineering.com/products/sabertooth2x32), [Sabertooth 2x25](https://www.dimensionengineering.com/products/sabertooth2x25) or [2x12](https://www.dimensionengineering.com/products/sabertooth2x12). The 2x32 and the 2x24 seem to be crossing over price point. Might as well get the 2x32 if you're buying brand new. There's some additional bells and whistles in the 32 and can be programmed via Dimension Engineering's software, but some of those usefuls features are handled in the code, like for speed Ramping for example. My styrene droid with Jaycar motors uses 2x12. Most people tend to use 2x25 or 2x32 for scooter motors and NPC motors. Consult with Dimension Engineering to make sure you get the right one you need. Either one will work with the code
+  Depending on your motors you'll want a Cytron SmartDriveDuo 30A dual motor controller found here: [Cytron Smart Drive Duo 30](https://makermotor.com/pn00218-cyt14-motor-driver-2-channels-30amp-7v-35v-dc-smartdrivedou-mdds30/?setCurrencyId=1&sku=PN00218-CYT14)
 
 - ### Syren Motor Controller - Dome
 
