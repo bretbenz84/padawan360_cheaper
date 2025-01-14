@@ -92,17 +92,10 @@ For the body. Main Arduino that runs everything. Receivers, code, connection to 
 
 Your USB Shield may need voltage pins jumped. See Steve Baudain's YouTube video here walking through it: https://www.youtube.com/watch?v=y9HEeBO3cV0
 
-- ### Xbox 360 Wireless USB Receiver
-
-  You may be able to source this from Best Buy, GameStop, or something local. It's available on [New Egg](https://www.newegg.com/p/pl?d=microsoft+xbox+360+usb+receiver).
-
-  I bought a generic one from Microcenter that works fine. Some users have gotten cheap ones from Ebay or other non-official/off-brands that did not function. I highly recommend buying 1st party official Microsoft receiver. Your mileage may vary with off-brand components here. If you are having problems pairing, and you've gone through the troubleshooting steps and you are not using an official receiver, it's likely the culprit.
-
-Some people have had luck making some adjustments to get some 3rd Party receivers working. Your mileage may vary so try to obtain first party first. Read up on it here: https://astromech.net/droidwiki/Cheap_XBox_Receivers
 
 - ### Xbox 360 Wireless Controller
 
-  Cheap aftermarket wireless controller advertised with a USB dongle operating at 2.4GHz (not real bluetooth) should be used with this script.
+  Cheap aftermarket wireless controller advertised with a USB dongle operating at 2.4GHz (not real bluetooth) should be used with this script. [Xbox contoller example](https://www.amazon.com/gp/product/B0CC59Z93Q/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1)
 
 - ### MP3 Trigger
 
