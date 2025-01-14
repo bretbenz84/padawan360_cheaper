@@ -7,15 +7,6 @@ dskraus@gmail.com
 Astromech: danomite4047
 Project Site: https://github.com/dankraus/padawan360/
 
-Heavily influenced by DanF's Padwan code which was built for Arduino+Wireless PS2
-controller leveraging Bill Porter's PS2X Library. I was running into frequent disconnect
-issues with 4 different controllers working in various capacities or not at all. I decided
-that PS2 Controllers were going to be more difficult to come by every day, so I explored
-some existing libraries out there to leverage and came across the USB Host Shield and it's
-support for PS3 and Xbox 360 controllers. Bluetooth dongles were inconsistent as well
-so I wanted to be able to have something with parts that other builder's could easily track
-down and buy parts even at your local big box store.
-
 v2.0 Changes:
 - Makes left analog stick default drive control stick. Configurable between left or right stick via isLeftStickDrive 
 
@@ -23,9 +14,9 @@ Hardware:
 ***Arduino Mega 2560***
 USB Host Shield from circuits@home
 Microsoft Xbox 360 Controller
-Xbox 360 USB Wireless Reciver
-Sabertooth Motor Controller
-Syren Motor Controller
+Xbox 360 USB Wireless Reciver (cheap aftermarket versions)
+Cytron SmartDriveDuo30 Motor Controller
+Syren10 Motor Controller
 Sparkfun MP3 Trigger
 
 This sketch supports I2C and calls events on many sound effect actions to control lights and sounds.
@@ -37,19 +28,39 @@ For SyRen Simple Serial Set Switches 1 and 2 Down, All Others Up
 For SyRen Simple Serial Set Switchs 2 & 4 Down, All Others Up
 Placed a 10K ohm resistor between S1 & GND on the SyRen 10 itself
 
+CHEAP VERSION CHANGES:
+by Bret Benziger
+Since true Xbox 360 bluetooth controllers are no longer produced, aftermarket cheap knockoffs
+are commonly found online. These are paired with a USB receiver typically listed as working
+at 2.4GHz. They simulate a wireless controller, and indeed are, but they do not use the 
+bluetooth library. Rather, they present as a wired USB controller. This code is updated to 
+reflect that.
+Also, the Sabertooth motor controllers are typically $130 USD, and a more affordable Cytron
+SmartDriveDuo 30 is available for $79 USD. This code only works with the Cytron SmartDriveDuo 
+30 in serial mode.
+
+POLOLU MAESTRO and Dome Lift:
+Also included are some Pololu Maestro script calls. I have one maestro 24 in the body and 
+one 18 channel maestro in the dome. I was not knowledgeable with I2C so I used a 6-wire 
+slip-ring for dome communication. 2 wires for power, 2 for I2C to connect to Teeces, 1 serial 
+for communicating with the dome Maestro, and 1 for communicating with the dome life by Matt 
+Zwarts found at https://www.thingiverse.com/thing:3654411 Dome 
+
 */
+
+// Padawan360 Script
 
 // ************************** Options, Configurations, and Settings ***********************************
 
 
 // SPEED AND TURN SPEEDS
-//set these 3 to whatever speeds work for you. 0-stop, 127-full speed.
-const byte DRIVESPEED1 = 50;
-// Recommend beginner: 50 to 75, experienced: 100 to 127, I like 100. 
+//set these 3 to whatever speeds work for you. 0-stop, 100-full speed.
+const byte DRIVESPEED1 = 25;
+// Recommend beginner: 20 to 50, experienced: 70 to 100, I like 70.
 // These may vary based on your drive system and power system
-const byte DRIVESPEED2 = 100;
+const byte DRIVESPEED2 = 35;
 //Set to 0 if you only want 2 speeds.
-const byte DRIVESPEED3 = 127;
+const byte DRIVESPEED3 = 80;
 
 // Default drive speed at startup
 byte drivespeed = DRIVESPEED1;
@@ -57,20 +68,20 @@ byte drivespeed = DRIVESPEED1;
 // the higher this number the faster the droid will spin in place, lower - easier to control.
 // Recommend beginner: 40 to 50, experienced: 50 $ up, I like 70
 // This may vary based on your drive system and power system
-const byte TURNSPEED = 70;
+const byte TURNSPEED = 40;
 
 // Set isLeftStickDrive to true for driving  with the left stick
 // Set isLeftStickDrive to false for driving with the right stick (legacy and original configuration)
-boolean isLeftStickDrive = true; 
+boolean isLeftStickDrive = true;
 
 // If using a speed controller for the dome, sets the top speed. You'll want to vary it potenitally
 // depending on your motor. My Pittman is really fast so I dial this down a ways from top speed.
 // Use a number up to 127 for serial
-const byte DOMESPEED = 110;
+const byte DOMESPEED = 85;
 
 // Ramping- the lower this number the longer R2 will take to speedup or slow down,
 // change this by incriments of 1
-const byte RAMPING = 5;
+const byte RAMPING = 4;
 
 // Compensation is for deadband/deadzone checking. There's a little play in the neutral zone
 // which gets a reading of a value of something other than 0 when you're not moving the stick.
@@ -80,14 +91,14 @@ const byte RAMPING = 5;
 // serial modes so just manage and check it in software here
 // use the lowest number with no drift
 // DOMEDEADZONERANGE for the left stick, DRIVEDEADZONERANGE for the right stick
-const byte DOMEDEADZONERANGE = 20;
-const byte DRIVEDEADZONERANGE = 20;
+const byte DOMEDEADZONERANGE = 15;
+const byte DRIVEDEADZONERANGE = 15;
 
-// Set the baude rate for the Sabertooth motor controller (feet)
-// 9600 is the default baud rate for Sabertooth packet serial.
+// Set the baude rate for the Cytron motor controller (feet)
+// 9600 is the default baud rate for Cytron serial.
 // for packetized options are: 2400, 9600, 19200 and 38400. I think you need to pick one that works
 // and I think it varies across different firmware versions.
-const int SABERTOOTHBAUDRATE = 9600;
+const int CYTRONBAUDRATE = 9600;
 
 // Set the baude rate for the Syren motor controller (dome)
 // for packetized options are: 2400, 9600, 19200 and 38400. I think you need to pick one that works
@@ -96,12 +107,12 @@ const int DOMEBAUDRATE = 9600;
 
 // Default sound volume at startup
 // 0 = full volume, 255 off
-byte vol = 20;
+byte vol = 42;
 
 
 // Automation Delays
 // set automateDelay to min and max seconds between sounds
-byte automateDelay = random(5, 20); 
+byte automateDelay = random(7, 20);
 //How much the dome may turn during automation.
 int turnDirection = 20;
 
@@ -111,11 +122,43 @@ int turnDirection = 20;
 #include <Sabertooth.h>
 #include <MP3Trigger.h>
 #include <Wire.h>
-#include <XBOXRECV.h>
+#include <XBOXUSB.h>
+#include <Cytron_SmartDriveDuo.h>
+#include <PololuMaestro.h>
+#include <SoftwareSerial.h>
 
+// Define the RX and TX pins for SoftwareSerial Dome Maestro
+const int RX_PINM = 5;  // Receive Pin
+const int TX_PINM = 3;  // Transmit Pin
+
+// Define the RX and TX pins for SoftwareSerial Dome Lift Arduino
+const int RX_PINL = 6;  // Receive Pin
+const int TX_PINL = 4;  // Transmit Pin
+
+// Create a SoftwareSerial object for dome pololu maestro
+SoftwareSerial Serial4(RX_PINM, TX_PINM);
+
+// Create a SoftwareSerial object for dome lift
+SoftwareSerial Serial5(RX_PINL, TX_PINL);
+
+// Define Body Maestro on Hardware Serial 3
+MiniMaestro maestro(Serial3);
+
+// Define Dome Maestro on Software Serial mySerial
+MiniMaestro maestrodome(Serial4);
+
+//Declare variables for Cytron Motors Speeds
+signed int speedLeft = 0, speedRight = 0;
+
+//Set pins to connect to Cytron SmartDriveDuo-30 in PWM Independent Mode
+//Set dip sticks to 10110100 (on = 1)
+#define AN2 13  // Arduino pin 6 is connected to MDDS30 pin AN2.
+#define AN1 12  // Arduino pin 5 is connected to MDDS30 pin AN1.
+#define IN2 11  // Arduino pin 7 is connected to MDDS30 pin IN2.
+#define IN1 10  // Arduino pin 4 is connected to MDDS30 pin IN1.
 
 /////////////////////////////////////////////////////////////////
-Sabertooth Sabertooth2x(128, Serial1);
+Cytron_SmartDriveDuo smartDriveDuo30(PWM_INDEPENDENT, IN1, IN2, AN1, AN2);
 Sabertooth Syren10(128, Serial2);
 
 // Satisfy IDE, which only needs to see the include statment in the ino.
@@ -134,7 +177,6 @@ unsigned long automateMillis = 0;
 // Action number used to randomly choose a sound effect or a dome turn
 byte automateAction = 0;
 
-
 int driveThrottle = 0;
 int throttleStickValue = 0;
 int domeThrottle = 0;
@@ -148,30 +190,31 @@ AnalogHatEnum domeAxis;
 ButtonEnum speedSelectButton;
 ButtonEnum hpLightToggleButton;
 
-
-// this is legacy right now. The rest of the sketch isn't set to send any of this
-// data to another arduino like the original Padawan sketch does
-// right now just using it to track whether or not the HP light is on so we can
-// fire the correct I2C event to turn on/off the HP light.
-//struct SEND_DATA_STRUCTURE{
-//  //put your variable definitions here for the data you want to send
-//  //THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
-//  int hpl; // hp light
-//  int dsp; // 0 = random, 1 = alarm, 5 = leia, 11 = alarm2, 100 = no change
-//};
-//SEND_DATA_STRUCTURE domeData;//give a name to the group of data
-
 boolean isHPOn = false;
-
-
 
 MP3Trigger mp3Trigger;
 USB Usb;
-XBOXRECV Xbox(&Usb);
+XBOXUSB Xbox(&Usb);
+
+// Counter to keep track of button presses for dome lift
+int buttonPressCounter_LF = 0;
+int buttonPressCounter_LS = 0;
+int buttonPressCounter_P = 0;
+int buttonPressCounter_Z = 0;
+int buttonPressCounter_BM = 0;
+
+
+// Motor control variables for spinning during animation
+unsigned long startMillis = 0;        // Stores the starting time for motor movement
+const unsigned long runTime = 12000;  // Desired run time in milliseconds (12 seconds)
+int slowSpeed = 50;                   // Speed for slow movement
+bool motorRunning = false;            // Tracks if the motor is currently running
 
 void setup() {
-  Serial1.begin(SABERTOOTHBAUDRATE);
   Serial2.begin(DOMEBAUDRATE);
+  Serial3.begin(9600);
+  Serial4.begin(9600);
+  Serial5.begin(9600);
 
 #if defined(SYRENSIMPLE)
   Syren10.motor(0);
@@ -179,23 +222,6 @@ void setup() {
   Syren10.autobaud();
 #endif
 
-  // Send the autobaud command to the Sabertooth controller(s).
-  /* NOTE: *Not all* Sabertooth controllers need this command.
-  It doesn't hurt anything, but V2 controllers use an
-  EEPROM setting (changeable with the function setBaudRate) to set
-  the baud rate instead of detecting with autobaud.
-  If you have a 2x12, 2x25 V2, 2x60 or SyRen 50, you can remove
-  the autobaud line and save yourself two seconds of startup delay.
-  */
-  Sabertooth2x.autobaud();
-  // The Sabertooth won't act on mixed mode packet serial commands until
-  // it has received power levels for BOTH throttle and turning, since it
-  // mixes the two together to get diff-drive power levels for both motors.
-  Sabertooth2x.drive(0);
-  Sabertooth2x.turn(0);
-
-
-  Sabertooth2x.setTimeout(950);
   Syren10.setTimeout(950);
 
   pinMode(EXTINGUISHERPIN, OUTPUT);
@@ -204,7 +230,9 @@ void setup() {
   mp3Trigger.setup();
   mp3Trigger.setVolume(vol);
 
-  if(isLeftStickDrive) {
+  randomSeed(analogRead(0));  // Seed randomness using an unconnected analog pin
+
+  if (isLeftStickDrive) {
     throttleAxis = LeftHatY;
     turnAxis = LeftHatX;
     domeAxis = RightHatX;
@@ -220,17 +248,20 @@ void setup() {
   }
 
 
- // Start I2C Bus. The body is the master.
+  // Start I2C Bus. The body is the master.
   Wire.begin();
 
   //Serial.begin(115200);
   // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
-  while (!Serial);
+  while (!Serial)
+    ;
   if (Usb.Init() == -1) {
     //Serial.print(F("\r\nOSC did not start"));
-    while (1); //halt
+    while (1)
+      ;  //halt
   }
   //Serial.print(F("\r\nXbox Wireless Receiver Library Started"));
+  smartDriveDuo30.control(0, 0);
 }
 
 
@@ -239,9 +270,8 @@ void loop() {
   // if we're not connected, return so we don't bother doing anything else.
   // set all movement to 0 so if we lose connection we don't have a runaway droid!
   // a restraining bolt and jawa droid caller won't save us here!
-  if (!Xbox.XboxReceiverConnected || !Xbox.Xbox360Connected[0]) {
-    Sabertooth2x.drive(0);
-    Sabertooth2x.turn(0);
+  if (!Xbox.Xbox360Connected) {
+    smartDriveDuo30.control(0, 0);
     Syren10.motor(1, 0);
     firstLoadOnConnect = false;
     return;
@@ -251,37 +281,37 @@ void loop() {
   if (!firstLoadOnConnect) {
     firstLoadOnConnect = true;
     mp3Trigger.play(21);
-    Xbox.setLedMode(ROTATING, 0);
-  }
-  
-  if (Xbox.getButtonClick(XBOX, 0)) {
-    if(Xbox.getButtonPress(L1, 0) && Xbox.getButtonPress(R1, 0)){ 
-      Xbox.disconnect(0);
-    }
+    Xbox.setLedMode(ROTATING);
   }
 
+  //if (Xbox.getButtonClick(XBOX)) {
+  //  if(Xbox.getButtonPress(L1) && Xbox.getButtonPress(R1)){
+  //    Xbox.disconnect(0);
+  //  }
+  //}
+
   // enable / disable right stick (droid movement) & play a sound to signal motor state
-  if (Xbox.getButtonClick(START, 0)) {
+  if (Xbox.getButtonClick(START)) {
     if (isDriveEnabled) {
       isDriveEnabled = false;
-      Xbox.setLedMode(ROTATING, 0);
+      Xbox.setLedMode(ROTATING);
       mp3Trigger.play(53);
     } else {
       isDriveEnabled = true;
       mp3Trigger.play(52);
       // //When the drive is enabled, set our LED accordingly to indicate speed
       if (drivespeed == DRIVESPEED1) {
-        Xbox.setLedOn(LED1, 0);
+        Xbox.setLedOn(LED1);
       } else if (drivespeed == DRIVESPEED2 && (DRIVESPEED3 != 0)) {
-        Xbox.setLedOn(LED2, 0);
+        Xbox.setLedOn(LED2);
       } else {
-        Xbox.setLedOn(LED3, 0);
+        Xbox.setLedOn(LED3);
       }
     }
   }
 
   //Toggle automation mode with the BACK button
-  if (Xbox.getButtonClick(BACK, 0)) {
+  if (Xbox.getButtonClick(BACK)) {
     if (isInAutomationMode) {
       isInAutomationMode = false;
       automateAction = 0;
@@ -326,25 +356,29 @@ void loop() {
       }
 
       // sets the mix, max seconds between automation actions - sounds and dome movement
-      automateDelay = random(3,10);
+      automateDelay = random(3, 10);
     }
   }
 
   // Volume Control of MP3 Trigger
   // Hold R1 and Press Up/down on D-pad to increase/decrease volume
-  if (Xbox.getButtonClick(UP, 0)) {
+  if (Xbox.getButtonClick(UP)) {
     // volume up
-    if (Xbox.getButtonPress(R1, 0)) {
+    if (Xbox.getButtonPress(R1)) {
       if (vol > 0) {
+        vol--;
+        vol--;
         vol--;
         mp3Trigger.setVolume(vol);
       }
     }
   }
-  if (Xbox.getButtonClick(DOWN, 0)) {
+  if (Xbox.getButtonClick(DOWN)) {
     //volume down
-    if (Xbox.getButtonPress(R1, 0)) {
+    if (Xbox.getButtonPress(R1)) {
       if (vol < 255) {
+        vol++;
+        vol++;
         vol++;
         mp3Trigger.setVolume(vol);
       }
@@ -353,25 +387,227 @@ void loop() {
 
   // Logic display brightness.
   // Hold L1 and press up/down on dpad to increase/decrease brightness
-  if (Xbox.getButtonClick(UP, 0)) {
-    if (Xbox.getButtonPress(L1, 0)) {
+  if (Xbox.getButtonClick(UP)) {
+    if (Xbox.getButtonPress(L1)) {
       triggerI2C(10, 24);
     }
   }
-  if (Xbox.getButtonClick(DOWN, 0)) {
-    if (Xbox.getButtonPress(L1, 0)) {
+  if (Xbox.getButtonClick(DOWN)) {
+    if (Xbox.getButtonPress(L1)) {
       triggerI2C(10, 25);
     }
   }
 
+  // Lift Mechanism Serial Commands
+  // Periscope
+  // Handle Lift Mechanism Serial Commands (A + R2 + L1 triggers Periscope)
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(L1)) {
+      if (Xbox.getButtonClick(A)) {
+        Serial5.println("4");  // Trigger periscope lift when A + R2 + L1 are pressed
+      }
+    }
+  }
+
+  // Lifeform Scanner lift
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonClick(X)) {
+      Serial5.println("1");
+      buttonPressCounter_LF++;
+
+      // Perform actions based on the counter value
+      switch (buttonPressCounter_LF) {
+        case 1:
+          maestrodome.restartScript(3);
+          break;
+        case 2:
+          maestrodome.restartScript(4);
+          break;
+        case 3:
+          buttonPressCounter_LF = 0;  // Reset counter after third press
+          break;
+      }
+    }
+  }
+
+
+  // Bad Motivator lift
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonClick(Y)) {
+      Serial5.println("2");
+      buttonPressCounter_BM++;
+
+      // Perform actions based on the counter value
+      switch (buttonPressCounter_BM) {
+        case 1:
+          maestrodome.restartScript(9);
+          break;
+        case 2:
+          maestrodome.restartScript(10);
+          break;
+        case 3:
+          buttonPressCounter_BM = 0;  // Reset counter after third press
+          break;
+      }
+    }
+  }
+
+  // Zapper lift
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonClick(B)) {
+      Serial5.println("3");
+      buttonPressCounter_Z++;
+
+      // Perform actions based on the counter value
+      switch (buttonPressCounter_Z) {
+        case 1:
+          //maestrodome.restartScript(7);
+          break;
+        case 2:
+          //maestrodome.restartScript(8);
+          break;
+        case 3:
+          buttonPressCounter_Z = 0;  // Reset counter after third press
+          break;
+      }
+    }
+  }
+
+  // Light Saber lift
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonClick(A)) {
+      Serial5.println("5");
+      buttonPressCounter_LS++;
+
+      // Perform actions based on the counter value
+      switch (buttonPressCounter_LS) {
+        case 1:
+          maestrodome.restartScript(5);
+          break;
+        case 2:
+          maestrodome.restartScript(6);
+          break;
+        case 3:
+          buttonPressCounter_LS = 0;  // Reset counter after third press
+          break;
+      }
+    }
+  }
+
+  // Maestro Animations custom to my droid
+  //Open utility arms
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(UP)) {
+      maestro.restartScript(0);
+    }
+  }
+  //Close utility arms
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(DOWN)) {
+      maestro.restartScript(1);
+    }
+  }
+  //Open interface arm
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(RIGHT)) {
+      maestro.restartScript(2);
+    }
+  }
+  //Open Gripper Arm
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(LEFT)) {
+      int scriptNumber;
+
+      // Randomly choose between 3, 9, or 10
+      int randomChoice = random(3);  // Generates a number between 0 and 2
+
+      if (randomChoice == 0) {
+        scriptNumber = 3;
+      } else if (randomChoice == 1) {
+        scriptNumber = 9;
+      } else {
+        scriptNumber = 10;
+      }
+
+      // Restart the chosen script
+      maestro.restartScript(scriptNumber);
+    }
+  }
+  //Open Logic Panel
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(R1)) {
+      if (Xbox.getButtonPress(UP)) {
+        maestro.restartScript(4);
+      }
+    }
+  }
+  //Close Logic Panel
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(R1)) {
+      if (Xbox.getButtonPress(DOWN)) {
+        maestro.restartScript(5);
+      }
+    }
+  }
+  //Crazy animation scream
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(R1)) {
+      if (Xbox.getButtonPress(LEFT)) {
+        int scriptNumber;
+
+        // Randomly choose between 2, or 11
+        int randomChoice = random(2);  // Generates a number between 0 and 1
+
+        if (randomChoice == 0) {
+          scriptNumber = 6;
+        } else if (randomChoice == 1) {
+          scriptNumber = 11;
+        }
+        maestro.restartScript(scriptNumber);
+        maestrodome.restartScript(2);
+        mp3Trigger.play(1);
+        triggerI2C(10, 1);
+      }
+    }
+  }
+
+
+  //Parole animation
+  if (Xbox.getButtonPress(R2)) {
+    if (Xbox.getButtonPress(R1)) {
+      if (Xbox.getButtonPress(RIGHT)) {
+        maestro.restartScript(8);
+        maestrodome.restartScript(1);
+        mp3Trigger.setVolume(15);
+        mp3Trigger.play(7);
+        // Start the motor if it isn't already running
+        if (!motorRunning) {
+          startMillis = millis();  // Record the start time
+          motorRunning = true;     // Set flag to indicate motor is running
+        }
+      }
+    }
+  }
+
+  // Maintain the motor at the slow speed for the full 12 seconds
+  if (motorRunning) {
+    Syren10.motor(1, slowSpeed);  // Keep motor spinning at slow speed
+
+    // Check if the motor has been running for the specified time and stop it
+    if (millis() - startMillis >= runTime) {
+      Syren10.motor(1, 0);   // Stop the motor
+      motorRunning = false;  // Reset flag
+      mp3Trigger.setVolume(vol);
+    }
+  }
 
   //FIRE EXTINGUISHER
   // When holding L2-UP, extinguisher is spraying. WHen released, stop spraying
 
   // TODO: ADD SERVO DOOR OPEN FIRST. ONLY ALLOW EXTINGUISHER ONCE IT'S SET TO 'OPENED'
   // THEN CLOSE THE SERVO DOOR
-  if (Xbox.getButtonPress(L1, 0)) {
-    if (Xbox.getButtonPress(UP, 0)) {
+  if (Xbox.getButtonPress(L1)) {
+    if (Xbox.getButtonPress(UP)) {
       digitalWrite(EXTINGUISHERPIN, LOW);
     } else {
       digitalWrite(EXTINGUISHERPIN, HIGH);
@@ -382,16 +618,16 @@ void loop() {
   // GENERAL SOUND PLAYBACK AND DISPLAY CHANGING
 
   // Y Button and Y combo buttons
-  if (Xbox.getButtonClick(Y, 0)) {
-    if (Xbox.getButtonPress(L1, 0)) {
+  if (Xbox.getButtonClick(Y)) {
+    if (Xbox.getButtonPress(L1)) {
       mp3Trigger.play(8);
       //logic lights, random
       triggerI2C(10, 0);
-    } else if (Xbox.getButtonPress(L2, 0)) {
+    } else if (Xbox.getButtonPress(L2)) {
       mp3Trigger.play(2);
       //logic lights, random
       triggerI2C(10, 0);
-    } else if (Xbox.getButtonPress(R1, 0)) {
+    } else if (Xbox.getButtonPress(R1)) {
       mp3Trigger.play(9);
       //logic lights, random
       triggerI2C(10, 0);
@@ -403,8 +639,8 @@ void loop() {
   }
 
   // A Button and A combo Buttons
-  if (Xbox.getButtonClick(A, 0)) {
-    if (Xbox.getButtonPress(L1, 0)) {
+  if (Xbox.getButtonClick(A)) {
+    if (Xbox.getButtonPress(L1)) {
       mp3Trigger.play(6);
       //logic lights
       triggerI2C(10, 6);
@@ -412,7 +648,7 @@ void loop() {
       triggerI2C(25, 11);
       triggerI2C(26, 11);
       triggerI2C(27, 11);
-    } else if (Xbox.getButtonPress(L2, 0)) {
+    } else if (Xbox.getButtonPress(L2)) {
       mp3Trigger.play(1);
       //logic lights, alarm
       triggerI2C(10, 1);
@@ -420,7 +656,7 @@ void loop() {
       triggerI2C(25, 3);
       triggerI2C(26, 3);
       triggerI2C(27, 3);
-    } else if (Xbox.getButtonPress(R1, 0)) {
+    } else if (Xbox.getButtonPress(R1)) {
       mp3Trigger.play(11);
       //logic lights, alarm2Display
       triggerI2C(10, 11);
@@ -432,17 +668,19 @@ void loop() {
   }
 
   // B Button and B combo Buttons
-  if (Xbox.getButtonClick(B, 0)) {
-    if (Xbox.getButtonPress(L1, 0)) {
+  if (Xbox.getButtonClick(B)) {
+    if (Xbox.getButtonPress(L1)) {
       mp3Trigger.play(7);
       //logic lights, random
       triggerI2C(10, 0);
-    } else if (Xbox.getButtonPress(L2, 0)) {
+    } else if (Xbox.getButtonPress(L2)) {
       mp3Trigger.play(3);
       //logic lights, random
       triggerI2C(10, 0);
-    } else if (Xbox.getButtonPress(R1, 0)) {
+    } else if (Xbox.getButtonPress(R1)) {
       mp3Trigger.play(10);
+      //March of Pies script 0
+      //maestrodome.restartScript(0);
       //logic lights bargrap
       triggerI2C(10, 10);
       // HPEvent 1 - Disco - I2C
@@ -457,19 +695,19 @@ void loop() {
   }
 
   // X Button and X combo Buttons
-  if (Xbox.getButtonClick(X, 0)) {
+  if (Xbox.getButtonClick(X)) {
     // leia message L1+X
-    if (Xbox.getButtonPress(L1, 0)) {
+    if (Xbox.getButtonPress(L1)) {
       mp3Trigger.play(5);
       //logic lights, leia message
       triggerI2C(10, 5);
       // Front HPEvent 1 - HoloMessage - I2C -leia message
       triggerI2C(25, 9);
-    } else if (Xbox.getButtonPress(L2, 0)) {
+    } else if (Xbox.getButtonPress(L2)) {
       mp3Trigger.play(4);
       //logic lights
       triggerI2C(10, 4);
-    } else if (Xbox.getButtonPress(R1, 0)) {
+    } else if (Xbox.getButtonPress(R1)) {
       mp3Trigger.play(12);
       //logic lights, random
       triggerI2C(10, 0);
@@ -482,7 +720,7 @@ void loop() {
 
   // turn hp light on & off with Right Analog Stick Press (R3) for left stick drive mode
   // turn hp light on & off with Left Analog Stick Press (L3) for right stick drive mode
-  if (Xbox.getButtonClick(hpLightToggleButton, 0))  {
+  if (Xbox.getButtonClick(hpLightToggleButton)) {
     // if hp light is on, turn it off
     if (isHPOn) {
       isHPOn = false;
@@ -502,49 +740,52 @@ void loop() {
   // Press Left Analog Stick (L3) for left stick drive mode
   // Press Right Analog Stick (R3) for right stick drive mode
   // Set LEDs for speed - 1 LED, Low. 2 LED - Med. 3 LED High
-  if (Xbox.getButtonClick(speedSelectButton, 0) && isDriveEnabled) {
+  if (Xbox.getButtonClick(speedSelectButton) && isDriveEnabled) {
     //if in lowest speed
     if (drivespeed == DRIVESPEED1) {
       //change to medium speed and play sound 3-tone
       drivespeed = DRIVESPEED2;
-      Xbox.setLedOn(LED2, 0);
+      Xbox.setLedOn(LED2);
       mp3Trigger.play(53);
       triggerI2C(10, 22);
     } else if (drivespeed == DRIVESPEED2 && (DRIVESPEED3 != 0)) {
       //change to high speed and play sound scream
       drivespeed = DRIVESPEED3;
-      Xbox.setLedOn(LED3, 0);
+      Xbox.setLedOn(LED3);
       mp3Trigger.play(1);
       triggerI2C(10, 23);
     } else {
       //we must be in high speed
       //change to low speed and play sound 2-tone
       drivespeed = DRIVESPEED1;
-      Xbox.setLedOn(LED1, 0);
+      Xbox.setLedOn(LED1);
       mp3Trigger.play(52);
       triggerI2C(10, 21);
     }
   }
 
 
- 
+
   // FOOT DRIVES
   // Xbox 360 analog stick values are signed 16 bit integer value
-  // Sabertooth runs at 8 bit signed. -127 to 127 for speed (full speed reverse and  full speed forward)
+  // Cytron values for speed -100 to 100 for speed (full speed reverse and  full speed forward)
   // Map the 360 stick values to our min/max current drive speed
-  throttleStickValue = (map(Xbox.getAnalogHat(throttleAxis, 0), -32768, 32767, -drivespeed, drivespeed));
+  // This code makes the droid safer to run faster as speed increases decrease the output 
+  // of the left and right values in a curve
+
+  throttleStickValue = (map(Xbox.getAnalogHat(throttleAxis), -32768, 32767, -drivespeed, drivespeed));
   if (throttleStickValue > -DRIVEDEADZONERANGE && throttleStickValue < DRIVEDEADZONERANGE) {
     // stick is in dead zone - don't drive
     driveThrottle = 0;
   } else {
     if (driveThrottle < throttleStickValue) {
-      if (throttleStickValue - driveThrottle < (RAMPING + 1) ) {
+      if (throttleStickValue - driveThrottle < (RAMPING + 1)) {
         driveThrottle += RAMPING;
       } else {
         driveThrottle = throttleStickValue;
       }
     } else if (driveThrottle > throttleStickValue) {
-      if (driveThrottle - throttleStickValue < (RAMPING + 1) ) {
+      if (driveThrottle - throttleStickValue < (RAMPING + 1)) {
         driveThrottle -= RAMPING;
       } else {
         driveThrottle = throttleStickValue;
@@ -552,7 +793,7 @@ void loop() {
     }
   }
 
-  turnThrottle = map(Xbox.getAnalogHat(turnAxis, 0), -32768, 32767, -TURNSPEED, TURNSPEED);
+  turnThrottle = map(Xbox.getAnalogHat(turnAxis), -32768, 32767, -TURNSPEED, TURNSPEED);
 
   // DRIVE!
   // right stick (drive)
@@ -563,19 +804,37 @@ void loop() {
       // stick is in dead zone - don't turn
       turnThrottle = 0;
     }
-    Sabertooth2x.turn(-turnThrottle);
-    Sabertooth2x.drive(driveThrottle);
+    // OLD METHOD
+    // Determine motor speeds and directions based on joystick input
+    //int speedLeft = constrain((driveThrottle - turnThrottle), -100, 100);
+    //int speedRight = constrain((driveThrottle + turnThrottle), -100, 100);
+    //  smartDriveDuo30.control(speedLeft, speedRight);
+
+    int maxDriveThrottle = TURNSPEED;  // Maximum drive throttle value
+    int maxTurnThrottle = 100;         // Maximum turn throttle value
+
+    // Linearly map turnThrottle based on driveThrottle
+    float driveFactor = 1 - (float(abs(driveThrottle)) / maxDriveThrottle);
+    // Calculate scaledTurnThrottle by applying the driveFactor
+    int scaledTurnThrottle = turnThrottle * driveFactor;
+
+    int speedLeft = constrain((driveThrottle - scaledTurnThrottle), -100, 100);
+    int speedRight = constrain((driveThrottle + scaledTurnThrottle), -100, 100);
+    smartDriveDuo30.control(speedLeft, speedRight);
   }
 
   // DOME DRIVE!
-  domeThrottle = (map(Xbox.getAnalogHat(domeAxis, 0), -32768, 32767, DOMESPEED, -DOMESPEED));
-  if (domeThrottle > -DOMEDEADZONERANGE && domeThrottle < DOMEDEADZONERANGE) {
-    //stick in dead zone - don't spin dome
-    domeThrottle = 0;
-  }
 
-  Syren10.motor(1, domeThrottle);
-} // END loop()
+  if (!motorRunning) {
+    domeThrottle = (map(Xbox.getAnalogHat(domeAxis), -32768, 32767, DOMESPEED, -DOMESPEED));
+    if (domeThrottle > -DOMEDEADZONERANGE && domeThrottle < DOMEDEADZONERANGE) {
+      //stick in dead zone - don't spin dome
+      domeThrottle = 0;
+    }
+
+    Syren10.motor(1, domeThrottle);
+  }  // END loop()
+}
 
 void triggerI2C(byte deviceID, byte eventID) {
   Wire.beginTransmission(deviceID);
