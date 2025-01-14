@@ -45,7 +45,6 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
   - [Sound](#sound-1)
   - [Dome](#dome-1)
   - [Drives](#drives)
-- [Coming Soon](#coming-soon)
 - [Licensing](#licensing)
 
 ## Intro
@@ -205,41 +204,9 @@ Make sure that you use at least a 14 Guage wire between the motor and the Syren 
 
 ### Foot Drive
 
-Review the documentation made available by Dimension Engineering for the Sabertooth Motor Controller.
+Review the documentation made available by Cytron for their Motor Controller. [Cytron Manual](https://makermotor.com/content/cytron/pn00218-cyt14/MDDS30_User_Manual.pdf)
 
-Connect the pins for the Syren Motor Controller:
-
-| Sabertooth ((2x32 2x25 or 2x12) | Arduino UNO |
-| ------------------------------- | ----------- |
-| S1                              | 4           |
-| S2                              | 3           |
-| 0v                              | GND         |
-
-| Sabertooth ((2x32 2x25 or 2x12) | Arduino Mega  |
-| ------------------------------- | ------------- |
-| S1                              | Serial1 (Tx1) |
-| S2                              | Serial1 (Rx1) |
-| 0v                              | GND           |
-
-| Sabertooth (2x32 2x25 or 2x12) | Battery  |
-| ------------------------------ | -------- |
-| B+                             | Positve  |
-| B-                             | Negative |
-
-| Sabertooth ((2x32 2x25 or 2x12) | Foot Motors            |
-| ------------------------------- | ---------------------- |
-| M1A                             | Right Motor Terminal 1 |
-| M1B                             | Right Motor Terminal 2 |
-| M2A                             | Left Motor Terminal 1  |
-| M2B                             | Left Motor Terminal 2  |
-
-Please use a maximum of 12 Gauge for the wires going to the Sabertooth and motors/power.
-
-Sabertooth 2x32 / 2x25 / 2x12 dip switches should 1 & 2 OFF and all others ON if using a regular SLA battery. If you're using Lithium-Ion batteries set switch #3 off also but consult your Sabertooth controller documentation.
-
-If you're using the 2x32 and you've tinkered with Dimension Engineering's DEScribe Software to tweak settings on your motor controller, under the Serial and USB tab, make sure the Baud Rate is set to 9600. This should be the default, but you should verify.
-
-If you're using 5v to power some components on your I2C device chain, you can use the 5V terminal on the Sabertooth and connect to the positive I2C pin header on the slipring board and 0V on the Sabertooth to GND on the slipring board.
+Be sure to set the pins to serial mode.
 
 ### Arduino UNO/MEGA
 
@@ -257,9 +224,7 @@ I've had better performance using the Mega with I2C because of using the hardwar
 
 ### Controller Pairing
 
-Power the Arduino up. It will also power up the Receiver. Press the big button on the receiver, it will blink. Press the center Guide button the controller to turn the controller too. It will blibk. Press the little sync button located on the top edge of the controller. The controller blink too, then they should sync up and the blinking pattern on the controller will change and swirl. This indicates a connection and that they are paired.
-
-There's also the [Xbox Support Guide](http://support.xbox.com/en-US/xbox-on-other-devices/connections/xbox-360-wireless-gaming-receiver-windows).
+Since you're using a pre-paired controller, no pairing is required.
 
 ### Options, Configurations, and Settings
 
@@ -372,10 +337,6 @@ Orient your controls from the perspective of the droid. Stand behind the droid s
 _**The right analog stick is centered but it still drives(turns, drives forward, drives reverse, etc)!**_
 
 You need to just adjust the deadzone `const byte DRIVEDEADZONERANGE = 20;` Increase this number until you can let the stick go neutral and nothing moves. The sketch has some more info on that above setting that value to adjust for controller stick drift.
-
-## Coming Soon
-
-Dome servos via I2C support.
 
 ## Licensing
 
