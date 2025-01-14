@@ -18,7 +18,7 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
   - [USB Shield](#usb-shield)
   - [Xbox 360 Wireless Controller](#xbox-360-wireless-controller)
   - [MP3 Trigger](#mp3-trigger)
-  - [Cytron Motor Controller - Feet](#sabertooth-motor-controller---feet)
+  - [Cytron Motor Controller - Feet](#cytron-motor-controller---feet)
   - [Syren Motor Controller - Dome](#syren-motor-controller---dome)
   - [Amp and Speakers](#amp-and-speakers)
   - [Teeces lights](#teeces-lights)
