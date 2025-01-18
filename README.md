@@ -94,7 +94,7 @@ Your USB Shield may need voltage pins jumped. See Steve Baudain's YouTube video 
 
 - ### Cytron Motor Controller - Feet
 
-  Depending on your motors you'll want a Cytron SmartDriveDuo 30A dual motor controller found here: [Cytron Smart Drive Duo 30](https://makermotor.com/pn00218-cyt14-motor-driver-2-channels-30amp-7v-35v-dc-smartdrivedou-mdds30/?setCurrencyId=1&sku=PN00218-CYT14)
+  Depending on your motors you'll want a Cytron SmartDriveDuo 30A dual motor controller found here: [Cytron Smart Drive Duo 30](https://makermotor.com/pn00218-cyt14-motor-driver-2-channels-30amp-7v-35v-dc-smartdrivedou-mdds30/?setCurrencyId=1&sku=PN00218-CYT14). Be sure to put it in PWM pinout mode.
 
 - ### Syren Motor Controller - Dome
 
